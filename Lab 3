@@ -1,0 +1,28 @@
+  (Using DEBUG)
+  ; 22*0=22, 0*22=0, 22*22=484
+  
+  mov al,[1000]    ;接入第一个数
+	add al,0fh       ;提取低四位部分
+	mov ah,[1000]    ;接入第一个数
+	mov cl,4     
+	shr ah,cl	       ;将其右移，用于提取高四位部分
+	aad             ;将ah,al中的非压缩bcd码转换为二进制数保存在ax中
+	mov cx,ax	      ;用于形成循环次数
+	mov bl,[1001]    ;接入第二个数
+	clc              ;清除cf标志器
+	cmp ax,0         ;特殊情况：看第一个数是否为0
+	jz 0132          ;为0则直接跳出
+	cmp bx,0         ;特殊情况：看第二个数是否为0
+	jz 0132		       ;为0则直接跳出
+	add al,bl		     ;循环计算的部分
+	daa              ;调整结果放在al中
+	adc ah,0         ;将进位放到ah中
+	mov dl,al        ;将计算结果暂时保存到dl中
+	mov al,ah        ;将ah放入到al中进行计算
+	daa              ;进行调整
+	mov ah,al         ;计算结果放回ah中
+	mov al,dl         ;恢复al值
+	dec cx           ;循环次数减1
+	jnz 0120         ;cx不为0，继续循环
+	mov [1002],al    ;保存低两位计算结果
+	mov [1003],ah    ;保存高两位计算结果
