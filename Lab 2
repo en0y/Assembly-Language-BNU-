@@ -1,0 +1,64 @@
+;Calculate: 12345+67890=080235
+
+DATA SEGMENT
+   DATA1  DB  '12345'  
+   DATA2  DB  '67890' 
+   SUM  DB  6  DUP(?)     
+DATA ENDS
+
+CODE SEGMENT
+    ASSUME CS:CODE, DS:DATA
+START:
+    MOV  AX, DATA
+    MOV  DS, AX
+
+    MOV  SI, 0    
+    MOV  CX, 5   
+RUN1: MOV  DL, DATA1[SI]       
+    MOV  AH, 2           
+    INT  21H
+    INC  SI           
+    LOOP RUN1
+   
+    MOV  DL, '+'         
+    MOV  AH, 2
+    INT  21H
+
+    MOV  SI, 0
+    MOV  CX, 5
+RUN2: MOV  DL, DATA2[SI]
+    MOV  AH, 2          
+    INT  21H
+    INC  SI
+    LOOP RUN2
+
+    MOV  DL, '='         
+    MOV  AH, 2
+    INT  21H
+
+    CLC             
+    MOV  SI, 4
+    MOV  CX, 5           
+RUN3: MOV  AL, DATA1[SI]       
+    ADC  AL, DATA2[SI]      
+    AAA                  
+    MOV  SUM[SI + 1], AL   
+    DEC  SI
+    LOOP RUN3  
+
+    MOV  AL, 0
+    ADC  AL, 0
+    MOV  SUM, AL
+
+    MOV  SI, 0
+    MOV  CX, 6          
+DISPLAY: MOV  DL, SUM[SI]   
+    ADD  DL, 30H
+    MOV  AH, 2
+    INT  21H
+    INC  SI
+    LOOP DISPLAY
+    MOV  AH, 4CH
+    INT  21H
+CODE ENDS
+    END START
