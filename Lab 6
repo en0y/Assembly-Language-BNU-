@@ -1,0 +1,130 @@
+; a.asm
+
+stack   segment para stack 'stack'
+        db      1024 dup (?)
+stack   ends
+
+data    segment para 'data'
+data_buf  db  50,49,48,47,46,45,44,43,42,41
+          db  40,39,38,37,36,35,34,33,32,31
+          db  30,29,28,27,26,25,24,23,22,21
+          db  20,19,18,17,16,15,14,13,12,11
+          db  10, 9, 8, 7, 6, 5, 4, 3, 2, 1
+msg1      db  'Raw Data:', 0dh, 0ah, '$'
+msg2      db  'Sorted Data:', 0dh, 0ah, '$'
+data    ends
+
+code    segment para 'code'
+        assume cs:code, ds:data, es:data, ss:stack
+
+main    proc far
+start:
+        push ds
+        xor  ax, ax
+        push ax
+
+
+
+        mov ax, data
+        mov ds, ax
+
+        ; 显示数据
+        lea  dx, msg1
+        mov  ah, 09h
+        int  21h
+        call dispall     
+
+
+        ; 排序算法
+        mov ax,offset data_buf
+        mov bx,offset msg1
+        sub bx,ax   ;根据存储区的来得到对应数目的个数
+
+
+        mov cx,bx
+        dec cx
+lp1:    mov di,cx
+        xor bx,bx
+
+lp2:    mov al,data_buf[bx]     ;因为为db，则每次的增量为1即可
+        cmp al,data_buf[bx+1]
+        jbe continue            ;无符号数的比较，小于等于
+        xchg al,data_buf[bx+1]
+        mov data_buf[bx],al
+
+continue:
+        add bx,1
+        loop lp2
+        mov cx,di
+        loop lp1
+
+        ; 排序后的数据
+        lea  dx, msg2
+        mov  ah, 09h
+        int  21h
+        call dispall     
+        ret
+
+main    endp
+
+dispall proc near          ; 显示data中的数据
+        lea  si, data_buf
+        mov  cx, 5
+loop1:  push cx
+        mov  cx, 10
+loop2:
+        lodsb
+        call disp_al
+        call disp_sp
+        loop loop2
+        call disp_cr
+        pop  cx
+        loop loop1
+        call disp_cr
+        ret
+dispall endp
+
+disp_al proc near        ; 按16进制方式显示al中数据
+        push cx
+        mov  bl, al
+        mov  dl, bl
+        mov  cl, 4
+        rol  dl, cl
+        and  dl, 0fh     
+        call disp4       ; 显示字节高4位
+        mov  dl, bl
+        and  dl, 0fh
+        call disp4       ; 显示字节低4位
+        pop  cx
+        ret
+disp_al endp
+
+disp4   proc near        ; 用ascii显示出来
+        add  dl, 30h     ; 
+        cmp  dl, 3ah     ; 
+        jb   ddd
+        add  dl, 27h     ; 'A'~'F'
+ddd:    mov  ah, 02h
+        int  21h         ; 显示字符
+        ret
+disp4   endp
+
+disp_cr proc near        ; 回车换行
+        mov  ah, 02h
+        mov  dl, 0dh
+        int  21h
+        mov  ah, 02h
+        mov  dl, 0ah
+        int  21h
+        ret
+disp_cr endp
+
+disp_sp proc near        ; 显示空格
+        mov  ah, 02h
+        mov  dl, ' '
+        int  21h
+        ret
+disp_sp endp
+
+code    ends
+        end main
